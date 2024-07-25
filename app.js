@@ -100,26 +100,26 @@ function areBPMsMixable(bpm1, bpm2) {
 
 async function createDjSet(tags, durationMs, energyAscending) {
     let allTracks = [];
-    for (const tag of tags) {
-        const genre = tag.toLowerCase();
-        if (validGenres.includes(genre)) {
-            // Search by genre if it's a valid genre
-            try {
-                const tracks = await searchTracksByGenre(genre);
-                allTracks = allTracks.concat(tracks);
-            } catch (error) {
-                console.error(`Error searching for tracks with genre "${genre}":`, error);
-                throw new Error(`Failed to search for tracks: ${error.message}`);
-            }
-        } else {
-            // Search by query if it's not a valid genre
-            try {
-                const tracks = await searchTracksByQuery(tag);
-                allTracks = allTracks.concat(tracks);
-            } catch (error) {
-                console.error(`Error searching for tracks with query "${tag}":`, error);
-                throw new Error(`Failed to search for tracks: ${error.message}`);
-            }
+    const genreTags = tags.filter(tag => validGenres.includes(tag.toLowerCase()));
+    const queryTags = tags.filter(tag => !validGenres.includes(tag.toLowerCase()));
+
+    for (const genre of genreTags) {
+        try {
+            const tracks = await searchTracksByGenre(genre.toLowerCase());
+            allTracks = allTracks.concat(tracks);
+        } catch (error) {
+            console.error(`Error searching for tracks with genre "${genre}":`, error);
+            throw new Error(`Failed to search for tracks: ${error.message}`);
+        }
+    }
+
+    for (const query of queryTags) {
+        try {
+            const tracks = await searchTracksByQuery(query);
+            allTracks = allTracks.concat(tracks);
+        } catch (error) {
+            console.error(`Error searching for tracks with query "${query}":`, error);
+            throw new Error(`Failed to search for tracks: ${error.message}`);
         }
     }
 

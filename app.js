@@ -135,10 +135,12 @@ async function createDjSet(tags, durationMs, energyOption) {
     // Sort tracks by energy if required
     if (energyOption !== 'ignore') {
         trackInfo.sort((a, b) => energyOption === 'ascending' ? a.energy - b.energy : b.energy - a.energy);
+    } else{
+        trackInfo = shuffleArray(trackInfo);
     }
 
     // Shuffle the tracks
-    trackInfo = shuffleArray(trackInfo);
+
 
     // Create playlist
     let playlist = [];
@@ -153,6 +155,11 @@ async function createDjSet(tags, durationMs, energyOption) {
                 lastBPM = track.tempo;
             }
         } else {
+            // Adjust to fit the required duration
+            const excessDuration = currentDuration + track.duration_ms - durationMs;
+            if (excessDuration < track.duration_ms) {
+                playlist.push({ ...track, duration_ms: track.duration_ms - excessDuration });
+            }
             break;
         }
     }
@@ -165,13 +172,14 @@ async function createDjSet(tags, durationMs, energyOption) {
 }
 
 // Function to display the playlist
+// Function to display the playlist
 function displayPlaylist(playlist) {
     const playlistContainer = document.getElementById('playlist-container');
     playlistContainer.innerHTML = '<h2>Your DJ Set:</h2>';
 
     const ul = document.createElement('ul');
     playlist.forEach(track => {
-        const li = document.createElement('li');
+        const li = document.createElement('li'); // Define `li` here
         const minutes = Math.floor(track.duration_ms / 60000);
         const seconds = Math.floor((track.duration_ms % 60000) / 1000);
         li.textContent = `${track.name} by ${track.artist} - BPM: ${track.tempo.toFixed(0)}, Key: ${track.key}, Energy: ${track.energy.toFixed(2)}, Length: ${minutes}:${seconds.toString().padStart(2, '0')}`;

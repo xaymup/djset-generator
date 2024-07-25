@@ -78,6 +78,15 @@ function areBPMsMixable(bpm1, bpm2) {
     return acceptableRatios.some(r => Math.abs(ratio - r) < 0.02);
 }
 
+// Function to shuffle an array
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+}
+
 // Function to create the DJ set
 async function createDjSet(tags, durationMs, energyOption) {
     let allTracks = [];
@@ -128,6 +137,9 @@ async function createDjSet(tags, durationMs, energyOption) {
         trackInfo.sort((a, b) => energyOption === 'ascending' ? a.energy - b.energy : b.energy - a.energy);
     }
 
+    // Shuffle the tracks
+    trackInfo = shuffleArray(trackInfo);
+
     // Create playlist
     let playlist = [];
     let currentDuration = 0;
@@ -160,7 +172,9 @@ function displayPlaylist(playlist) {
     const ul = document.createElement('ul');
     playlist.forEach(track => {
         const li = document.createElement('li');
-        li.textContent = `${track.name} by ${track.artist} - BPM: ${track.tempo.toFixed(0)}, Key: ${track.key}, Energy: ${track.energy.toFixed(2)}`;
+        const minutes = Math.floor(track.duration_ms / 60000);
+        const seconds = Math.floor((track.duration_ms % 60000) / 1000);
+        li.textContent = `${track.name} by ${track.artist} - BPM: ${track.tempo.toFixed(0)}, Key: ${track.key}, Energy: ${track.energy.toFixed(2)}, Length: ${minutes}:${seconds.toString().padStart(2, '0')}`;
         ul.appendChild(li);
     });
 

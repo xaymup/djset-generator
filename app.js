@@ -2,14 +2,38 @@ const clientId = '1b977c733d7548bc8d906aa088094e49';
 const redirectUri = 'http://localhost:5500'; 
 
 let accessToken;
+let validGenres = [];
 
-function init() {
+// Fetch the available genres from Spotify
+async function fetchAvailableGenres() {
+    const response = await fetch('https://api.spotify.com/v1/recommendations/available-genre-seeds', {
+        headers: {
+            'Authorization': `Bearer ${accessToken}`
+        }
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    validGenres = data.genres;
+}
+
+// Initialize the app
+async function init() {
     const args = new URLSearchParams(window.location.hash.substr(1));
     accessToken = args.get('access_token');
 
     if (accessToken) {
         document.getElementById('login-button').style.display = 'none';
         document.getElementById('dj-set-form').style.display = 'block';
+        try {
+            await fetchAvailableGenres();
+        } catch (error) {
+            console.error('Error fetching available genres:', error);
+            alert(`An error occurred while fetching available genres: ${error.message}`);
+        }
     } else {
         document.getElementById('login-button').style.display = 'block';
         document.getElementById('dj-set-form').style.display = 'none';
@@ -21,7 +45,20 @@ function authenticate() {
     window.location = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
 }
 
-async function searchTracks(query, limit = 50) {
+async function searchTracksByGenre(genre, limit = 50) {
+    const response = await fetch(`https://api.spotify.com/v1/recommendations?seed_genres=${genre}&limit=${limit}`, {
+        headers: {
+            'Authorization': `Bearer ${accessToken}`
+        }
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.tracks;
+}
+
+async function searchTracksByQuery(query, limit = 50) {
     const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`, {
         headers: {
             'Authorization': `Bearer ${accessToken}`
@@ -64,12 +101,25 @@ function areBPMsMixable(bpm1, bpm2) {
 async function createDjSet(tags, durationMs, energyAscending) {
     let allTracks = [];
     for (const tag of tags) {
-        try {
-            const tracks = await searchTracks(tag);
-            allTracks = allTracks.concat(tracks);
-        } catch (error) {
-            console.error(`Error searching for tracks with tag "${tag}":`, error);
-            throw new Error(`Failed to search for tracks: ${error.message}`);
+        const genre = tag.toLowerCase();
+        if (validGenres.includes(genre)) {
+            // Search by genre if it's a valid genre
+            try {
+                const tracks = await searchTracksByGenre(genre);
+                allTracks = allTracks.concat(tracks);
+            } catch (error) {
+                console.error(`Error searching for tracks with genre "${genre}":`, error);
+                throw new Error(`Failed to search for tracks: ${error.message}`);
+            }
+        } else {
+            // Search by query if it's not a valid genre
+            try {
+                const tracks = await searchTracksByQuery(tag);
+                allTracks = allTracks.concat(tracks);
+            } catch (error) {
+                console.error(`Error searching for tracks with query "${tag}":`, error);
+                throw new Error(`Failed to search for tracks: ${error.message}`);
+            }
         }
     }
 
@@ -155,6 +205,4 @@ document.getElementById('dj-set-form').addEventListener('submit', async (e) => {
     }
 });
 
-document.getElementById('login-button').addEventListener('click', authenticate);
-
-init();
+window.onload = init;

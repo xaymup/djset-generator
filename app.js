@@ -40,7 +40,7 @@ async function loadGenres() {
 
 // Function to search for tracks
 async function searchTracks(query, limit = 50, type = 'track') {
-    const response = await fetch(`https://api.spotify.com/v1/search?q=tag:${encodeURIComponent(query)}&type=${type}&limit=${limit}`, {
+    const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${type}&limit=${limit}`, {
         headers: {
             'Authorization': `Bearer ${accessToken}`
         }
@@ -96,14 +96,15 @@ async function createDjSet(tags, durationMs, energyOption) {
 
         if (isGenre) {
             try {
-                const tracks = await searchTracks(`genre:"${tag}"`);
+                let genreTag = tag.replace(/ /g, '-');
+                const tracks = await searchTracks(`genre:"${genreTag}"`);
                 allTracks = allTracks.concat(tracks);
             } catch (error) {
                 console.error(`Error searching for tracks with genre "${tag}":`, error);
             }
         } else {
             try {
-                const tracks = await searchTracks(tag);
+                const tracks = await searchTracks(`tag:"${tag}"`);
                 allTracks = allTracks.concat(tracks);
             } catch (error) {
                 console.error(`Error searching for tracks with tag "${tag}":`, error);
@@ -135,14 +136,10 @@ async function createDjSet(tags, durationMs, energyOption) {
     // Sort tracks by energy if required
     if (energyOption !== 'ignore') {
         trackInfo.sort((a, b) => energyOption === 'ascending' ? a.energy - b.energy : b.energy - a.energy);
-    } else{
+    } else {
         trackInfo = shuffleArray(trackInfo);
     }
 
-    // Shuffle the tracks
-
-
-    // Create playlist
     let playlist = [];
     let currentDuration = 0;
     let lastBPM = null;
@@ -155,12 +152,26 @@ async function createDjSet(tags, durationMs, energyOption) {
                 lastBPM = track.tempo;
             }
         } else {
-            // Adjust to fit the required duration
+            // Check if we can adjust the last track to fit the duration
             const excessDuration = currentDuration + track.duration_ms - durationMs;
             if (excessDuration < track.duration_ms) {
                 playlist.push({ ...track, duration_ms: track.duration_ms - excessDuration });
+                currentDuration = durationMs;
+                break;
             }
-            break;
+        }
+    }
+
+    // If the playlist is shorter than the desired duration, add more tracks if possible
+    if (currentDuration < durationMs) {
+        for (const track of trackInfo) {
+            if (!playlist.includes(track) && currentDuration + track.duration_ms <= durationMs) {
+                if (lastBPM === null || areBPMsMixable(lastBPM, track.tempo)) {
+                    playlist.push(track);
+                    currentDuration += track.duration_ms;
+                    lastBPM = track.tempo;
+                }
+            }
         }
     }
 
@@ -177,15 +188,27 @@ function displayPlaylist(playlist) {
     playlistContainer.innerHTML = '<h2>Your DJ Set:</h2>';
 
     const ul = document.createElement('ul');
+    let totalDurationMs = 0;
+
     playlist.forEach(track => {
-        const li = document.createElement('li'); // Define `li` here
+        const li = document.createElement('li');
         const minutes = Math.floor(track.duration_ms / 60000);
         const seconds = Math.floor((track.duration_ms % 60000) / 1000);
+        totalDurationMs += track.duration_ms;
         li.textContent = `${track.name} by ${track.artist} - BPM: ${track.tempo.toFixed(0)}, Key: ${track.key}, Energy: ${track.energy.toFixed(2)}, Length: ${minutes}:${seconds.toString().padStart(2, '0')}`;
         ul.appendChild(li);
     });
 
     playlistContainer.appendChild(ul);
+
+    // Calculate the total duration
+    const totalMinutes = Math.floor(totalDurationMs / 60000);
+    const totalSeconds = Math.floor((totalDurationMs % 60000) / 1000);
+
+    // Display the total length of the DJ set
+    const totalLength = document.createElement('p');
+    totalLength.textContent = `Total Length: ${totalMinutes}:${totalSeconds.toString().padStart(2, '0')}`;
+    playlistContainer.appendChild(totalLength);
 }
 
 // Event listener for form submission

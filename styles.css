@@ -55,3 +55,42 @@ button:hover {
     background: #fff;
     padding: 20px;
 }
+
+#login-button {
+    background-color: #1DB954; /* Spotify green */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+}
+
+#login-button img {
+    width: 20px; /* Adjust the size of the Spotify logo */
+    margin-right: 8px;
+}
+
+#login-button:hover {
+    background-color: #1ed760; /* Slightly lighter green on hover */
+}
+.spotify-login-button {
+    background-color: #1DB954; /* Spotify Green */
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.spotify-login-button::before {
+    content: url('https://upload.wikimedia.org/wikipedia/commons/6/6b/Spotify_logo_2015.png'); /* Spotify Logo */
+    width: 24px;
+    height: 24px;
+}

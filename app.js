@@ -1,39 +1,23 @@
+// Spotify API credentials
 const clientId = '1b977c733d7548bc8d906aa088094e49';
-const redirectUri = 'http://localhost:5500'; 
+const redirectUri = 'http://localhost:5500'; // Update this with your actual local server address
 
 let accessToken;
-let validGenres = [];
-
-// Fetch the available genres from Spotify
-async function fetchAvailableGenres() {
-    const response = await fetch('https://api.spotify.com/v1/recommendations/available-genre-seeds', {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`
-        }
-    });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    validGenres = data.genres;
-}
+const genreEndpoint = 'https://api.spotify.com/v1/recommendations/available-genre-seeds';
 
 // Initialize the app
-async function init() {
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('login-button').addEventListener('click', authenticate);
+    init();
+});
+
+function init() {
     const args = new URLSearchParams(window.location.hash.substr(1));
     accessToken = args.get('access_token');
 
     if (accessToken) {
         document.getElementById('login-button').style.display = 'none';
         document.getElementById('dj-set-form').style.display = 'block';
-        try {
-            await fetchAvailableGenres();
-        } catch (error) {
-            console.error('Error fetching available genres:', error);
-            alert(`An error occurred while fetching available genres: ${error.message}`);
-        }
     } else {
         document.getElementById('login-button').style.display = 'block';
         document.getElementById('dj-set-form').style.display = 'none';
@@ -41,12 +25,13 @@ async function init() {
 }
 
 function authenticate() {
+    console.log('Authenticate function triggered'); // Debugging line
     const scopes = 'user-read-private user-read-email playlist-modify-private';
     window.location = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
 }
 
-async function searchTracksByGenre(genre, limit = 50) {
-    const response = await fetch(`https://api.spotify.com/v1/recommendations?seed_genres=${genre}&limit=${limit}`, {
+async function fetchGenres() {
+    const response = await fetch(genreEndpoint, {
         headers: {
             'Authorization': `Bearer ${accessToken}`
         }
@@ -55,10 +40,10 @@ async function searchTracksByGenre(genre, limit = 50) {
         throw new Error(`HTTP error! status: ${response.status}`);
     }
     const data = await response.json();
-    return data.tracks;
+    return data.genres;
 }
 
-async function searchTracksByQuery(query, limit = 50) {
+async function searchTracks(query, limit = 50) {
     const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`, {
         headers: {
             'Authorization': `Bearer ${accessToken}`
@@ -72,10 +57,12 @@ async function searchTracksByQuery(query, limit = 50) {
 }
 
 async function getAudioFeatures(trackIds) {
+    const chunkSize = 50;
     const audioFeatures = [];
-    for (let i = 0; i < trackIds.length; i += 100) {
-        const batch = trackIds.slice(i, i + 100);
-        const response = await fetch(`https://api.spotify.com/v1/audio-features?ids=${batch.join(',')}`, {
+
+    for (let i = 0; i < trackIds.length; i += chunkSize) {
+        const chunk = trackIds.slice(i, i + chunkSize);
+        const response = await fetch(`https://api.spotify.com/v1/audio-features?ids=${chunk.join(',')}`, {
             headers: {
                 'Authorization': `Bearer ${accessToken}`
             }
@@ -85,10 +72,8 @@ async function getAudioFeatures(trackIds) {
         }
         const data = await response.json();
         audioFeatures.push(...data.audio_features);
-
-        // Implement a delay between batches to avoid rate limits
-        await new Promise(resolve => setTimeout(resolve, 500));
     }
+
     return audioFeatures;
 }
 
@@ -100,25 +85,19 @@ function areBPMsMixable(bpm1, bpm2) {
 
 async function createDjSet(tags, durationMs, energyAscending) {
     let allTracks = [];
-    const genreTags = tags.filter(tag => validGenres.includes(tag.toLowerCase()));
-    const queryTags = tags.filter(tag => !validGenres.includes(tag.toLowerCase()));
+    const genres = await fetchGenres();
 
-    for (const genre of genreTags) {
-        try {
-            const tracks = await searchTracksByGenre(genre.toLowerCase());
-            allTracks = allTracks.concat(tracks);
-        } catch (error) {
-            console.error(`Error searching for tracks with genre "${genre}":`, error);
-            throw new Error(`Failed to search for tracks: ${error.message}`);
+    for (const tag of tags) {
+        let query = tag;
+        if (genres.includes(tag)) {
+            query = `genre:${tag}`;
         }
-    }
 
-    for (const query of queryTags) {
         try {
-            const tracks = await searchTracksByQuery(query);
+            const tracks = await searchTracks(query);
             allTracks = allTracks.concat(tracks);
         } catch (error) {
-            console.error(`Error searching for tracks with query "${query}":`, error);
+            console.error(`Error searching for tracks with tag "${tag}":`, error);
             throw new Error(`Failed to search for tracks: ${error.message}`);
         }
     }
@@ -185,6 +164,7 @@ function displayPlaylist(playlist) {
 
 document.getElementById('dj-set-form').addEventListener('submit', async (e) => {
     e.preventDefault();
+
     const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
     const durationMs = document.getElementById('duration').value * 60 * 1000;
     const energyAscending = document.getElementById('energy').value === 'ascending';
@@ -204,5 +184,3 @@ document.getElementById('dj-set-form').addEventListener('submit', async (e) => {
         generateButton.disabled = false;
     }
 });
-
-window.onload = init;

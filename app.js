@@ -1,6 +1,6 @@
 // Spotify API credentials
 const clientId = '1b977c733d7548bc8d906aa088094e49';
-const redirectUri = 'http://xaymup.me/djset-generator'; // Update this with your actual local server address
+const redirectUri = 'https://xaymup.me/djset-generator/'; // Update this with your actual local server address
 
 let accessToken;
 let genreList = []; // Array to hold genre objects from genres.json

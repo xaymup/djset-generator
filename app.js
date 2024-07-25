@@ -3,13 +3,7 @@ const clientId = '1b977c733d7548bc8d906aa088094e49';
 const redirectUri = 'http://localhost:5500'; // Update this with your actual local server address
 
 let accessToken;
-const genreEndpoint = 'https://api.spotify.com/v1/recommendations/available-genre-seeds';
-
-// Initialize the app
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('login-button').addEventListener('click', authenticate);
-    init();
-});
+let genreList = []; // Array to hold genre objects from genres.json
 
 function init() {
     const args = new URLSearchParams(window.location.hash.substr(1));
@@ -18,6 +12,7 @@ function init() {
     if (accessToken) {
         document.getElementById('login-button').style.display = 'none';
         document.getElementById('dj-set-form').style.display = 'block';
+        loadGenres(); // Load genres when the user is authenticated
     } else {
         document.getElementById('login-button').style.display = 'block';
         document.getElementById('dj-set-form').style.display = 'none';
@@ -25,26 +20,27 @@ function init() {
 }
 
 function authenticate() {
-    console.log('Authenticate function triggered'); // Debugging line
     const scopes = 'user-read-private user-read-email playlist-modify-private';
     window.location = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
 }
 
-async function fetchGenres() {
-    const response = await fetch(genreEndpoint, {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`
+// Function to load genres from JSON file
+async function loadGenres() {
+    try {
+        const response = await fetch('genres.json');
+        if (!response.ok) {
+            throw new Error('Failed to load genres');
         }
-    });
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const data = await response.json();
+        genreList = data.map(genre => genre.name.toLowerCase()); // Store genre names in lowercase
+    } catch (error) {
+        console.error('Error loading genres:', error);
     }
-    const data = await response.json();
-    return data.genres;
 }
 
-async function searchTracks(query, limit = 50) {
-    const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=track&limit=${limit}`, {
+// Function to search for tracks
+async function searchTracks(query, limit = 50, type = 'track') {
+    const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${type}&limit=${limit}`, {
         headers: {
             'Authorization': `Bearer ${accessToken}`
         }
@@ -57,9 +53,8 @@ async function searchTracks(query, limit = 50) {
 }
 
 async function getAudioFeatures(trackIds) {
-    const chunkSize = 50;
-    const audioFeatures = [];
-
+    const features = [];
+    const chunkSize = 50; // Spotify API limit for batch requests
     for (let i = 0; i < trackIds.length; i += chunkSize) {
         const chunk = trackIds.slice(i, i + chunkSize);
         const response = await fetch(`https://api.spotify.com/v1/audio-features?ids=${chunk.join(',')}`, {
@@ -71,34 +66,39 @@ async function getAudioFeatures(trackIds) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        audioFeatures.push(...data.audio_features);
+        features.push(...data.audio_features);
     }
-
-    return audioFeatures;
+    return features;
 }
 
+// Helper function to check if BPMs are mixable
 function areBPMsMixable(bpm1, bpm2) {
     const ratio = bpm1 / bpm2;
     const acceptableRatios = [0.5, 0.75, 1, 1.33, 1.5, 2];
     return acceptableRatios.some(r => Math.abs(ratio - r) < 0.02);
 }
 
-async function createDjSet(tags, durationMs, energyAscending) {
+// Function to create the DJ set
+async function createDjSet(tags, durationMs, energyOption) {
     let allTracks = [];
-    const genres = await fetchGenres();
 
     for (const tag of tags) {
-        let query = tag;
-        if (genres.includes(tag)) {
-            query = `genre:${tag}`;
-        }
+        let isGenre = genreList.includes(tag.toLowerCase());
 
-        try {
-            const tracks = await searchTracks(query);
-            allTracks = allTracks.concat(tracks);
-        } catch (error) {
-            console.error(`Error searching for tracks with tag "${tag}":`, error);
-            throw new Error(`Failed to search for tracks: ${error.message}`);
+        if (isGenre) {
+            try {
+                const tracks = await searchTracks(`genre:"${tag}"`);
+                allTracks = allTracks.concat(tracks);
+            } catch (error) {
+                console.error(`Error searching for tracks with genre "${tag}":`, error);
+            }
+        } else {
+            try {
+                const tracks = await searchTracks(tag);
+                allTracks = allTracks.concat(tracks);
+            } catch (error) {
+                console.error(`Error searching for tracks with tag "${tag}":`, error);
+            }
         }
     }
 
@@ -123,8 +123,12 @@ async function createDjSet(tags, durationMs, energyAscending) {
         ...(audioFeatures[index] || {})
     }));
 
-    trackInfo.sort((a, b) => energyAscending ? a.energy - b.energy : b.energy - a.energy);
+    // Sort tracks by energy if required
+    if (energyOption !== 'ignore') {
+        trackInfo.sort((a, b) => energyOption === 'ascending' ? a.energy - b.energy : b.energy - a.energy);
+    }
 
+    // Create playlist
     let playlist = [];
     let currentDuration = 0;
     let lastBPM = null;
@@ -148,6 +152,7 @@ async function createDjSet(tags, durationMs, energyAscending) {
     return playlist;
 }
 
+// Function to display the playlist
 function displayPlaylist(playlist) {
     const playlistContainer = document.getElementById('playlist-container');
     playlistContainer.innerHTML = '<h2>Your DJ Set:</h2>';
@@ -162,19 +167,20 @@ function displayPlaylist(playlist) {
     playlistContainer.appendChild(ul);
 }
 
+// Event listener for form submission
 document.getElementById('dj-set-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
     const durationMs = document.getElementById('duration').value * 60 * 1000;
-    const energyAscending = document.getElementById('energy').value === 'ascending';
-
+    const energyOption = document.querySelector('input[name="energy-option"]:checked').value;
+    
     const generateButton = document.getElementById('generate-button');
     generateButton.textContent = 'Loading...';
     generateButton.disabled = true;
 
     try {
-        const playlist = await createDjSet(tags, durationMs, energyAscending);
+        const playlist = await createDjSet(tags, durationMs, energyOption);
         displayPlaylist(playlist);
     } catch (error) {
         console.error('Error creating DJ set:', error);
@@ -184,3 +190,9 @@ document.getElementById('dj-set-form').addEventListener('submit', async (e) => {
         generateButton.disabled = false;
     }
 });
+
+// Add event listener for login button
+document.getElementById('login-button').addEventListener('click', authenticate);
+
+// Initialize the app
+init();

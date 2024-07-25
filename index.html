@@ -8,33 +8,33 @@
     <script src="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/js/all.min.js"></script>
 </head>
 <body>
-    <button id="login-button">
-        <i class="fab fa-spotify"></i> Login with Spotify
-    </button>
-
-    <form id="dj-set-form">
-        <label for="tags">
-            Tags (comma-separated):
-            <input type="text" id="tags" name="tags" required>
-        </label>
-        <label for="duration">
-            Duration (in minutes):
-            <input type="number" id="duration" name="duration" min="1" required>
-        </label>
-        <label>
-            <input type="radio" name="energy-option" value="ascending" checked> Ascending
-        </label>
-        <label>
-            <input type="radio" name="energy-option" value="descending"> Descending
-        </label>
-        <label>
-            <input type="radio" name="energy-option" value="ignore"> Ignore
-        </label>
-        <button id="generate-button" type="submit">Generate DJ Set</button>
-    </form>
-
-    <div id="playlist-container"></div>
-
+    <div class="container">
+        <h1>DJ Set Generator</h1>
+        <button id="login-button">
+            <i class="fab fa-spotify"></i> Login with Spotify
+        </button>
+        <form id="dj-set-form">
+            <label for="tags">Tags (comma-separated):
+                <input type="text" id="tags" name="tags" required>
+            </label>
+            <label for="duration">
+                Duration (in minutes):
+                <input type="number" id="duration" name="duration" min="1" required>
+            </label>
+            <label for="energy-sorting">
+                Energy sorting:<br>
+                <input type="radio" name="energy-option" value="ascending" checked> Ascending
+            </label>
+            <label>
+                <input type="radio" name="energy-option" value="descending"> Descending
+            </label>
+            <label>
+                <input type="radio" name="energy-option" value="ignore"> Ignore
+            </label>
+            <button id="generate-button" type="submit">Generate DJ Set</button>
+        </form>
+        <div id="playlist-container"></div>
+    </div>
     <script src="app.js"></script>
 </body>
 </html>

@@ -52,6 +52,34 @@ async function searchTracks(query, limit = 50, type = 'track') {
     return data.tracks.items;
 }
 
+// Function to search for recommendations based on artist
+async function searchRecommendations(artistId, limit = 50) {
+    const response = await fetch(`https://api.spotify.com/v1/recommendations?seed_artists=${artistId}&limit=${limit}`, {
+        headers: {
+            'Authorization': `Bearer ${accessToken}`
+        }
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.tracks;
+}
+
+// Function to get artist ID by name
+async function getArtistId(artistName) {
+    const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(artistName)}&type=artist&limit=1`, {
+        headers: {
+            'Authorization': `Bearer ${accessToken}`
+        }
+    });
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    const data = await response.json();
+    return data.artists.items.length ? data.artists.items[0].id : null;
+}
+
 async function getAudioFeatures(trackIds) {
     const features = [];
     const chunkSize = 50; // Spotify API limit for batch requests
@@ -93,6 +121,15 @@ async function createDjSet(tags, durationMs, energyOption) {
 
     for (const tag of tags) {
         let isGenre = genreList.includes(tag.toLowerCase());
+        let artistId = null;
+
+        if (!isGenre) {
+            try {
+                artistId = await getArtistId(tag);
+            } catch (error) {
+                console.error(`Error getting artist ID for "${tag}":`, error);
+            }
+        }
 
         if (isGenre) {
             try {
@@ -101,6 +138,13 @@ async function createDjSet(tags, durationMs, energyOption) {
                 allTracks = allTracks.concat(tracks);
             } catch (error) {
                 console.error(`Error searching for tracks with genre "${tag}":`, error);
+            }
+        } else if (artistId) {
+            try {
+                const tracks = await searchRecommendations(artistId);
+                allTracks = allTracks.concat(tracks);
+            } catch (error) {
+                console.error(`Error searching for recommendations for artist "${tag}":`, error);
             }
         } else {
             try {

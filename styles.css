@@ -9,6 +9,10 @@ body {
     align-items: center;
 }
 
+.trackName {
+    background-color: antiquewhite;
+}
+
 .container {
     margin-top: 100px;
     display: flex;

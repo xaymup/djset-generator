@@ -68,7 +68,7 @@ async function searchRecommendations(artistId, limit = 50) {
 
 // Function to get artist ID by name
 async function getArtistId(artistName) {
-    const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(artistName)}&type=artist`, {
+    const response = await fetch(`https://api.spotify.com/v1/search?q="${encodeURIComponent(artistName)}"&type=artist`, {
         headers: {
             'Authorization': `Bearer ${accessToken}`
         }
@@ -293,7 +293,7 @@ async function createPlaylist(userId, name) {
         },
         body: JSON.stringify({
             name: name,
-            description: "Generated using lulu's Playlist Generator",
+            description: "Generated using matchafrappe.com",
             public: false
         })
     });

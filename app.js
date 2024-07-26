@@ -68,7 +68,7 @@ async function searchRecommendations(artistId, limit = 50) {
 
 // Function to get artist ID by name
 async function getArtistId(artistName) {
-    const response = await fetch(`https://api.spotify.com/v1/search?q=tag:${encodeURIComponent(artistName)}&type=artist`, {
+    const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(artistName)}&type=artist`, {
         headers: {
             'Authorization': `Bearer ${accessToken}`
         }

@@ -3,7 +3,7 @@ body {
     line-height: 1.6;
     margin: 0;
     padding: 0;
-    background-color: #f4f4f4;
+    background-color: #1b1b1b;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -75,6 +75,7 @@ button:hover {
     cursor: pointer;
     display: inline-flex;
     align-items: center;
+    width: auto;
 }
 
 #login-button i {

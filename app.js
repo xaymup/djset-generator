@@ -97,14 +97,14 @@ async function createDjSet(tags, durationMs, energyOption) {
         if (isGenre) {
             try {
                 let genreTag = tag.replace(/ /g, '-');
-                const tracks = await searchTracks(`genre:"${genreTag}"`);
+                const tracks = await searchTracks(`genre:${genreTag}`);
                 allTracks = allTracks.concat(tracks);
             } catch (error) {
                 console.error(`Error searching for tracks with genre "${tag}":`, error);
             }
         } else {
             try {
-                const tracks = await searchTracks(`tag:"${tag}"`);
+                const tracks = await searchTracks(`tag:${tag}`);
                 allTracks = allTracks.concat(tracks);
             } catch (error) {
                 console.error(`Error searching for tracks with tag "${tag}":`, error);

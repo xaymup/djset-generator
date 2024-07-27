@@ -11,10 +11,12 @@ function init() {
 
     if (accessToken) {
         document.getElementById('login-button').style.display = 'none';
+        document.getElementById('email-form').style.display = 'none';
         document.getElementById('dj-set-form').style.display = 'block';
         loadGenres(); // Load genres when the user is authenticated
     } else {
         document.getElementById('login-button').style.display = 'block';
+        document.getElementById('email-form').style.display = 'block';
         document.getElementById('dj-set-form').style.display = 'none';
     }
 }

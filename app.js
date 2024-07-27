@@ -14,11 +14,19 @@ function init() {
         document.getElementById('email-form').style.display = 'none';
         document.getElementById('dj-set-form').style.display = 'block';
         loadGenres(); // Load genres when the user is authenticated
+        tokenExpire(redirectUri);
     } else {
         document.getElementById('login-button').style.display = 'block';
         document.getElementById('email-form').style.display = 'block';
         document.getElementById('dj-set-form').style.display = 'none';
     }
+}
+
+function tokenExpire(url) {
+    // 3600 seconds = 3600 * 1000 milliseconds
+    setTimeout(function() {
+        window.location.href = url;
+    }, 3600 * 1000);
 }
 
 function authenticate() {

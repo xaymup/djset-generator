@@ -44,6 +44,7 @@ label {
 }
 
 input[type="text"],
+input[type="email"],
 input[type="number"],
 select {
     margin-bottom: 10px;
@@ -61,6 +62,7 @@ select {
 }
 
 input[type="text"]:focus,
+input[type="email"]:focus,
 input[type="number"]:focus,
 select:focus {
     background-color: #ffffff;
@@ -70,6 +72,7 @@ select:focus {
 }
 
 input[type="text"]:hover:not(:focus),
+input[type="email"]:hover:not(:focus),
 input[type="number"]:hover:not(:focus),
 select:hover:not(:focus) {
     background-color: #dadada;

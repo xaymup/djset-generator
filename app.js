@@ -89,7 +89,7 @@ async function createDjSet(tags, durationMs, energyOption) {
 
     for (const tag of tags) {
         try {
-            const tracks = await searchTracks(`tag:${tag}`);
+            const tracks = await searchTracks(`${tag}`);
             allTracks = allTracks.concat(tracks);
         } catch (error) {
             console.error(`Error searching for tracks with tag "${tag}":`, error);
@@ -118,8 +118,8 @@ async function createDjSet(tags, durationMs, energyOption) {
     }));
 
     // Sort tracks by energy if required
-    if (energyOption !== 'ignore') {
-        trackInfo.sort((a, b) => energyOption === 'ascending' ? a.energy - b.energy : b.energy - a.energy);
+    if (energyOption !== 'Random') {
+        trackInfo.sort((a, b) => energyOption === 'Ascending' ? a.energy - b.energy : b.energy - a.energy);
     } else {
         trackInfo = shuffleArray(trackInfo);
     }
@@ -271,7 +271,7 @@ document.getElementById('dj-set-form').addEventListener('submit', async (e) => {
 
     const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
     const durationMs = document.getElementById('duration').value * 60 * 1000;
-    const energyOption = document.querySelector('input[name="energy-option"]:checked').value;
+    const energyOption = document.getElementById('energy').value;
     
     const generateButton = document.getElementById('generate-button');
     generateButton.textContent = 'Loading...';
@@ -294,3 +294,13 @@ document.getElementById('login-button').addEventListener('click', authenticate);
 
 // Initialize the app
 init();
+
+
+document.querySelectorAll('.toggle-button-group button').forEach(button => {
+    button.addEventListener('click', function() {
+        document.querySelectorAll('.toggle-button-group button').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        this.classList.add('active');
+    });
+});

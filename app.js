@@ -1,7 +1,7 @@
 // Spotify API credentials
 const clientId = '1b977c733d7548bc8d906aa088094e49';
-const redirectUri = 'https://matchafrappe.com';
-// const redirectUri = 'http://localhost:5500'; 
+// const redirectUri = 'https://matchafrappe.com';
+const redirectUri = 'http://localhost:5500'; 
 let accessToken;
 let genreList = []; // Array to hold genre objects from genres.json
 
@@ -62,33 +62,6 @@ async function searchTracks(query, limit = 50, type = 'track') {
     return data.tracks.items;
 }
 
-// Function to search for recommendations based on artist
-async function searchRecommendations(artistId, limit = 50) {
-    const response = await fetch(`https://api.spotify.com/v1/recommendations?seed_artists=${artistId}&limit=${limit}`, {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`
-        }
-    });
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    return data.tracks;
-}
-
-// Function to get artist ID by name
-async function getArtistId(artistName) {
-    const response = await fetch(`https://api.spotify.com/v1/search?q="${encodeURIComponent(artistName)}"&type=artist`, {
-        headers: {
-            'Authorization': `Bearer ${accessToken}`
-        }
-    });
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    const data = await response.json();
-    return data.artists.items.length ? data.artists.items[0].id : null;
-}
 
 async function getAudioFeatures(trackIds) {
     const features = [];
@@ -133,14 +106,6 @@ async function createDjSet(tags, durationMs, energyOption) {
         let isGenre = genreList.includes(tag.toLowerCase());
         let artistId = null;
 
-        if (!isGenre) {
-            try {
-                artistId = await getArtistId(tag);
-            } catch (error) {
-                console.error(`Error getting artist ID for "${tag}":`, error);
-            }
-        }
-
         if (isGenre) {
             try {
                 let genreTag = tag.replace(/ /g, '-');
@@ -151,10 +116,10 @@ async function createDjSet(tags, durationMs, energyOption) {
             }
         } else if (artistId) {
             try {
-                const tracks = await searchRecommendations(artistId);
+                const tracks = await searchTracks(`artist:${tag}`);
                 allTracks = allTracks.concat(tracks);
             } catch (error) {
-                console.error(`Error searching for recommendations for artist "${tag}":`, error);
+                console.error(`Error searching for artist "${tag}":`, error);
             }
         } else {
             try {

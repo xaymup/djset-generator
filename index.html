@@ -48,7 +48,7 @@
             <button type="submit">Submit</button>
         </form>
         <script>
-            document.getElementById('myForm').addEventListener('submit', function(event) {
+            document.getElementById('email-form').addEventListener('submit', function(event) {
                 var response = grecaptcha.getResponse();
                 if(response.length == 0) {
                     // reCAPTCHA not verified

@@ -6,6 +6,7 @@
     <title>DJ Set Generator</title>
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.0.0/js/all.min.js"></script>
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
@@ -42,6 +43,8 @@
             <label for="email">Your Spotify account email:</label>
             <input type="email" id="email" name="entry.720860960" required>
             <br><br>
+            <div class="g-recaptcha" data-sitekey="6LdGgRoqAAAAAGBjCMGhGyQgUvHY8rSrPFKGU4-0"></div>
+            <br>
             <button type="submit">Submit</button>
         </form>
         </div>

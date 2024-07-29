@@ -3,7 +3,6 @@ const clientId = '1b977c733d7548bc8d906aa088094e49';
 // const redirectUri = 'https://matchafrappe.com';
 const redirectUri = 'http://localhost:5500'; 
 let accessToken;
-let genreList = []; // Array to hold genre objects from genres.json
 
 function init() {
     const args = new URLSearchParams(window.location.hash.substr(1));
@@ -13,7 +12,6 @@ function init() {
         document.getElementById('login-button').style.display = 'none';
         document.getElementById('email-form').style.display = 'none';
         document.getElementById('dj-set-form').style.display = 'block';
-        loadGenres(); // Load genres when the user is authenticated
         tokenExpire(redirectUri);
     } else {
         document.getElementById('login-button').style.display = 'block';
@@ -34,19 +32,6 @@ function authenticate() {
     window.location = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
 }
 
-// Function to load genres from JSON file
-async function loadGenres() {
-    try {
-        const response = await fetch('genres.json');
-        if (!response.ok) {
-            throw new Error('Failed to load genres');
-        }
-        const data = await response.json();
-        genreList = data.map(genre => genre.name.toLowerCase()); // Store genre names in lowercase
-    } catch (error) {
-        console.error('Error loading genres:', error);
-    }
-}
 
 // Function to search for tracks
 async function searchTracks(query, limit = 50, type = 'track') {
@@ -103,31 +88,11 @@ async function createDjSet(tags, durationMs, energyOption) {
     let allTracks = [];
 
     for (const tag of tags) {
-        let isGenre = genreList.includes(tag.toLowerCase());
-        let artistId = null;
-
-        if (isGenre) {
-            try {
-                let genreTag = tag.replace(/ /g, '-');
-                const tracks = await searchTracks(`genre:${genreTag}`);
-                allTracks = allTracks.concat(tracks);
-            } catch (error) {
-                console.error(`Error searching for tracks with genre "${tag}":`, error);
-            }
-        } else if (artistId) {
-            try {
-                const tracks = await searchTracks(`artist:${tag}`);
-                allTracks = allTracks.concat(tracks);
-            } catch (error) {
-                console.error(`Error searching for artist "${tag}":`, error);
-            }
-        } else {
-            try {
-                const tracks = await searchTracks(`tag:${tag}`);
-                allTracks = allTracks.concat(tracks);
-            } catch (error) {
-                console.error(`Error searching for tracks with tag "${tag}":`, error);
-            }
+        try {
+            const tracks = await searchTracks(`tag:${tag}`);
+            allTracks = allTracks.concat(tracks);
+        } catch (error) {
+            console.error(`Error searching for tracks with tag "${tag}":`, error);
         }
     }
 

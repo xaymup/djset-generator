@@ -47,6 +47,16 @@
             <br>
             <button type="submit">Submit</button>
         </form>
+        <script>
+            document.getElementById('myForm').addEventListener('submit', function(event) {
+                var response = grecaptcha.getResponse();
+                if(response.length == 0) {
+                    // reCAPTCHA not verified
+                    event.preventDefault();
+                    alert("Please verify you are not a robot.");
+                }
+            });
+        </script>
         </div>
     </div>
     <script data-name="BMC-Widget" data-cfasync="false" src="https://cdnjs.buymeacoffee.com/1.0.0/widget.prod.min.js" data-id="xaymup" data-description="Support me on Buy me a coffee!" data-message="" data-color="#e861a4" data-position="Right" data-x_margin="18" data-y_margin="18"></script>

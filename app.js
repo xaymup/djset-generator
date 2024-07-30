@@ -1,7 +1,7 @@
 // Spotify API credentials
 const clientId = '1b977c733d7548bc8d906aa088094e49';
-const redirectUri = 'https://matchafrappe.com';
-// const redirectUri = 'http://localhost:5500'; 
+// const redirectUri = 'https://matchafrappe.com';
+const redirectUri = 'http://localhost:5500'; 
 let accessToken;
 let genreList = []; // Array to hold genre objects from genres.json
 
@@ -35,6 +35,7 @@ function authenticate() {
 
 // Function to search for tracks
 async function searchTracks(query, limit = 50, type = 'track') {
+    query = query.replace(/ /g, "-");
     if (!query.includes(':')) {
         query = "tag:" + query;
     }
@@ -158,7 +159,6 @@ function shuffleArray(array) {
 // Function to create the DJ set
 async function createDjSet(tags, durationMs, energyOption, harmonicOption) {
     let allTracks = [];
-
     for (const tag of tags) {
         try {
             const tracks = await searchTracks(`${tag}`);
@@ -196,8 +196,6 @@ async function createDjSet(tags, durationMs, energyOption, harmonicOption) {
         trackInfo = shuffleArray(trackInfo);
     }
 
-    // Enable Harmonic Mixing if (harmonicOption.checked)
-
 
 
     let playlist = [];
@@ -210,16 +208,21 @@ async function createDjSet(tags, durationMs, energyOption, harmonicOption) {
             if (lastBPM === null || areBPMsMixable(lastBPM, track.tempo)) {
                 if (harmonicOption.checked){
                     if (lastKey === null || arePitchClassesHarmonicallyCompatible(lastKey, track.key)){
-                        playlist.push(track);
-                        currentDuration += track.duration_ms;
-                        lastKey = track.key;
-                        lastBPM = track.tempo;
+                        if (!playlist.includes(track)) {
+                            console.log("Adding harmonically matched track");
+                            playlist.push(track);
+                            currentDuration += track.duration_ms;
+                            lastKey = track.key;
+                            lastBPM = track.tempo;
+                        }
                     }
                 }
                 else {
-                    playlist.push(track);
-                    currentDuration += track.duration_ms;
-                    lastBPM = track.tempo;
+                    if (!playlist.includes(track)) {
+                        playlist.push(track);
+                        currentDuration += track.duration_ms;
+                        lastBPM = track.tempo;
+                    }
                 }
             }
         } else {
@@ -233,18 +236,6 @@ async function createDjSet(tags, durationMs, energyOption, harmonicOption) {
         }
     }
 
-    // If the playlist is shorter than the desired duration, add more tracks if possible
-    if (currentDuration < durationMs) {
-        for (const track of trackInfo) {
-            if (!playlist.includes(track) && currentDuration + track.duration_ms <= durationMs) {
-                if (lastBPM === null || areBPMsMixable(lastBPM, track.tempo)) {
-                    playlist.push(track);
-                    currentDuration += track.duration_ms;
-                    lastBPM = track.tempo;
-                }
-            }
-        }
-    }
 
     if (playlist.length === 0) {
         throw new Error('Could not create a playlist with the given criteria');

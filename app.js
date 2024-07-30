@@ -1,7 +1,7 @@
 // Spotify API credentials
 const clientId = '1b977c733d7548bc8d906aa088094e49';
-// const redirectUri = 'https://matchafrappe.com';
-const redirectUri = 'http://localhost:5500'; 
+const redirectUri = 'https://matchafrappe.com';
+// const redirectUri = 'http://localhost:5500'; 
 let accessToken;
 let genreList = []; // Array to hold genre objects from genres.json
 

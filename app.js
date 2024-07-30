@@ -84,7 +84,7 @@ function shuffleArray(array) {
 }
 
 // Function to create the DJ set
-async function createDjSet(tags, durationMs, energyOption) {
+async function createDjSet(tags, ionMs, energyOption) {
     let allTracks = [];
 
     for (const tag of tags) {
@@ -113,46 +113,46 @@ async function createDjSet(tags, durationMs, energyOption) {
         id: track.id,
         name: track.name,
         artist: track.artists[0].name,
-        duration_ms: track.duration_ms,
+        ion_ms: track.ion_ms,
         ...(audioFeatures[index] || {})
     }));
 
     // Sort tracks by energy if required
-    if (energyOption !== 'Random') {
+    if (energyOption !== 'Unsorted') {
         trackInfo.sort((a, b) => energyOption === 'Ascending' ? a.energy - b.energy : b.energy - a.energy);
     } else {
         trackInfo = shuffleArray(trackInfo);
     }
 
     let playlist = [];
-    let currentDuration = 0;
+    let currention = 0;
     let lastBPM = null;
 
     for (const track of trackInfo) {
-        if (currentDuration + track.duration_ms <= durationMs) {
+        if (currention + track.ion_ms <= ionMs) {
             if (lastBPM === null || areBPMsMixable(lastBPM, track.tempo)) {
                 playlist.push(track);
-                currentDuration += track.duration_ms;
+                currention += track.ion_ms;
                 lastBPM = track.tempo;
             }
         } else {
-            // Check if we can adjust the last track to fit the duration
-            const excessDuration = currentDuration + track.duration_ms - durationMs;
-            if (excessDuration < track.duration_ms) {
-                playlist.push({ ...track, duration_ms: track.duration_ms - excessDuration });
-                currentDuration = durationMs;
+            // Check if we can adjust the last track to fit the ion
+            const excession = currention + track.ion_ms - ionMs;
+            if (excession < track.ion_ms) {
+                playlist.push({ ...track, ion_ms: track.ion_ms - excession });
+                currention = ionMs;
                 break;
             }
         }
     }
 
-    // If the playlist is shorter than the desired duration, add more tracks if possible
-    if (currentDuration < durationMs) {
+    // If the playlist is shorter than the desired ion, add more tracks if possible
+    if (currention < ionMs) {
         for (const track of trackInfo) {
-            if (!playlist.includes(track) && currentDuration + track.duration_ms <= durationMs) {
+            if (!playlist.includes(track) && currention + track.ion_ms <= ionMs) {
                 if (lastBPM === null || areBPMsMixable(lastBPM, track.tempo)) {
                     playlist.push(track);
-                    currentDuration += track.duration_ms;
+                    currention += track.ion_ms;
                     lastBPM = track.tempo;
                 }
             }
@@ -172,22 +172,22 @@ function displayPlaylist(playlist) {
     playlistContainer.innerHTML = '<h2>Your DJ set:</h2>';
 
     const ul = document.createElement('ul');
-    let totalDurationMs = 0;
+    let totalionMs = 0;
 
     playlist.forEach(track => {
         const li = document.createElement('li');
-        const minutes = Math.floor(track.duration_ms / 60000);
-        const seconds = Math.floor((track.duration_ms % 60000) / 1000);
-        totalDurationMs += track.duration_ms;
+        const minutes = Math.floor(track.ion_ms / 60000);
+        const seconds = Math.floor((track.ion_ms % 60000) / 1000);
+        totalionMs += track.ion_ms;
         li.textContent = `${track.name} by ${track.artist} - BPM: ${track.tempo.toFixed(0)}, Key: ${track.key}, Energy: ${track.energy.toFixed(2)}, Length: ${minutes}:${seconds.toString().padStart(2, '0')}`;
         ul.appendChild(li);
     });
 
     playlistContainer.appendChild(ul);
 
-    // Calculate the total duration
-    const totalMinutes = Math.floor(totalDurationMs / 60000);
-    const totalSeconds = Math.floor((totalDurationMs % 60000) / 1000);
+    // Calculate the total ion
+    const totalMinutes = Math.floor(totalionMs / 60000);
+    const totalSeconds = Math.floor((totalionMs % 60000) / 1000);
 
     // Display the total length of the DJ set
     const totalLength = document.createElement('p');
@@ -270,7 +270,7 @@ document.getElementById('dj-set-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
-    const durationMs = document.getElementById('duration').value * 60 * 1000;
+    const ionMs = document.getElementById('duration').value * 60 * 1000;
     const energyOption = document.getElementById('energy').value;
     
     const generateButton = document.getElementById('generate-button');
@@ -278,7 +278,7 @@ document.getElementById('dj-set-form').addEventListener('submit', async (e) => {
     generateButton.disabled = true;
 
     try {
-        const playlist = await createDjSet(tags, durationMs, energyOption);
+        const playlist = await createDjSet(tags, ionMs, energyOption);
         displayPlaylist(playlist);
     } catch (error) {
         console.error('Error creating DJ set:', error);
@@ -296,11 +296,35 @@ document.getElementById('login-button').addEventListener('click', authenticate);
 init();
 
 
-document.querySelectorAll('.toggle-button-group button').forEach(button => {
-    button.addEventListener('click', function() {
-        document.querySelectorAll('.toggle-button-group button').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        this.classList.add('active');
-    });
+function increment() {
+    var input = document.getElementById("duration");
+    var currentValue = parseInt(input.value, 10);
+    var maxValue = parseInt(input.max, 10);
+    if (!isNaN(currentValue) && currentValue < maxValue) {
+        input.value = currentValue + 1;
+    }
+}
+
+function decrement() {
+    var input = document.getElementById("duration");
+    var currentValue = parseInt(input.value, 10);
+    var minValue = parseInt(input.min, 10);
+    if (!isNaN(currentValue) && currentValue > minValue) {
+        input.value = currentValue - 1;
+    }
+}
+
+// Ensure input value is within bounds on manual input
+document.getElementById("duration").addEventListener("input", function() {
+    var value = parseInt(this.value, 10);
+    var minValue = parseInt(this.min, 10);
+    var maxValue = parseInt(this.max, 10);
+
+    if (isNaN(value)) {
+        this.value = minValue;
+    } else if (value < minValue) {
+        this.value = minValue;
+    } else if (value > maxValue) {
+        this.value = maxValue;
+    }
 });

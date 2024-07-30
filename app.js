@@ -35,7 +35,7 @@ function authenticate() {
 
 // Function to search for tracks
 async function searchTracks(query, limit = 50, type = 'track') {
-    const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${type}&limit=${limit}`, {
+    const response = await fetch(`https://api.spotify.com/v1/search?q=tag:${encodeURIComponent(query)}&type=${type}&limit=${limit}`, {
         headers: {
             'Authorization': `Bearer ${accessToken}`
         }
@@ -210,6 +210,7 @@ async function createDjSet(tags, durationMs, energyOption, harmonicOption) {
                         playlist.push(track);
                         currentDuration += track.duration_ms;
                         lastKey = track.key;
+                        lastBPM = track.tempo;
                     }
                 }
                 else {
@@ -252,8 +253,8 @@ async function createDjSet(tags, durationMs, energyOption, harmonicOption) {
 // Function to display the playlist
 function displayPlaylist(playlist) {
     const playlistContainer = document.getElementById('playlist-container');
+    playlistContainer.style.display = 'block';
     playlistContainer.innerHTML = '<legend>Your DJ set:</legend>';
-
     const ul = document.createElement('ul');
     let totalDurationMs = 0;
 

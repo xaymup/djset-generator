@@ -20,7 +20,7 @@
             </div>
         </div>
         <div class="window-body">
-            <div>
+            <div class="field-row">
                 <button id="login-button">
                     <i class="fab fa-spotify"></i> Login with Spotify
                 </button>
@@ -28,10 +28,10 @@
             <form id="dj-set-form">
                 <div class="field-row">
                     <label for="tags">Tags (comma-separated):</label>
-                    <input style="width: 250px" type="text" id="tags" name="tags" placeholder="Artist:bladee, genre:breakcore, emo death" required>
+                    <input style="width: 250px" type="text" id="tags" name="tags" placeholder="bladee, breakcore, russian hardbass" required>
                 </div>
                 <div class="field-row">
-                    <label>You can use filtered tags for better results. E.g. artist:Tamer hosny, track:Right where it belongs, year:1998, genre: Deep house</label>
+                    <label>You can use filtered tags for better results. E.g. artist:Tamer hosny, genre: Deep house</label>
                 </div>
                 <div class="field-row">
                     <label for="duration">Duration (in minutes):</label>
@@ -52,16 +52,15 @@
                     </select>
                 </div>
                 <div class="field-row">
-                    <input type="checkbox" id="example1">
-                    <label for="example1">Harmonic mixing</label>
+                    <input type="checkbox" id="harmonic">
+                    <label for="harmonic">Harmonic mixing</label>
                 </div>
                 <div class="field-row" style="justify-content: flex-end">
                     <button id="generate-button" type="submit">Generate Playlist</button>
                 </div>
             </form>
-            <div id="playlist-container"></div>
-            <div id="email-form">
-                <p>Due to Spotify's development API limitation, I need to invite you for using this app. It takes them 6 months on average to review an application 😅</p>
+            <div class="field-row" id="email-form">
+                <label style="padding:10px">Due to Spotify's development API limitation, I need to invite you for using this app. It takes them 6 months on average to review an application 😅</label>
                 <form action="https://docs.google.com/forms/d/e/1FAIpQLSd8ePbGO2G8nrK2i0gI_cvbI90rjcQC8fWp4ISr-61IivxLzw/formResponse" method="POST" target="_self">
                     <label for="email">Your Spotify account email:</label>
                     <input type="email" id="email" name="entry.720860960" required>
@@ -71,6 +70,7 @@
                     </div>
                 </form>
             </div>
+            <ul class="tree-view" id="playlist-container"></ul>
         </div>
         <script>
             document.getElementById('email-form').addEventListener('submit', function(event) {

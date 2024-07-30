@@ -3,6 +3,7 @@ const clientId = '1b977c733d7548bc8d906aa088094e49';
 // const redirectUri = 'https://matchafrappe.com';
 const redirectUri = 'http://localhost:5500'; 
 let accessToken;
+let genreList = []; // Array to hold genre objects from genres.json
 
 function init() {
     const args = new URLSearchParams(window.location.hash.substr(1));
@@ -31,7 +32,6 @@ function authenticate() {
     const scopes = 'user-read-private user-read-email playlist-modify-private';
     window.location = `https://accounts.spotify.com/authorize?client_id=${clientId}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=${encodeURIComponent(scopes)}`;
 }
-
 
 // Function to search for tracks
 async function searchTracks(query, limit = 50, type = 'track') {
@@ -74,6 +74,75 @@ function areBPMsMixable(bpm1, bpm2) {
     return acceptableRatios.some(r => Math.abs(ratio - r) < 0.02);
 }
 
+
+// Define a mapping from pitch classes to Camelot notation
+const pitchClassToCamelot = {
+    0: ["8B", "5A"],  // C major, A minor
+    1: ["3B", "12A"], // C♯ major, B♭ minor
+    2: ["10B", "7A"], // D major, B minor
+    3: ["5B", "2A"],  // E♭ major, C minor
+    4: ["12B", "9A"], // E major, C♯ minor
+    5: ["7B", "4A"],  // F major, D minor
+    6: ["2B", "11A"], // F♯ major, E♭ minor
+    7: ["9B", "6A"],  // G major, E minor
+    8: ["4B", "1A"],  // A♭ major, F minor
+    9: ["11B", "8A"], // A major, F♯ minor
+    10: ["6B", "3A"], // B♭ major, G minor
+    11: ["1B", "10A"] // B major, G♯ minor
+};
+
+// Function to check if two pitch classes are harmonically compatible
+function arePitchClassesHarmonicallyCompatible(pitch1, pitch2) {
+    // Get the Camelot keys for each pitch class
+    const keys1 = pitchClassToCamelot[pitch1];
+    const keys2 = pitchClassToCamelot[pitch2];
+
+    // If either pitch class is not found, return false
+    if (!keys1 || !keys2) {
+        return false;
+    }
+
+    // Function to check harmonic compatibility for a given Camelot key pair
+    function areKeysHarmonicallyCompatible(key1, key2) {
+        const camelotKeys = [
+            "1A", "2A", "3A", "4A", "5A", "6A", "7A", "8A", "9A", "10A", "11A", "12A",
+            "1B", "2B", "3B", "4B", "5B", "6B", "7B", "8B", "9B", "10B", "11B", "12B"
+        ];
+        
+        const index1 = camelotKeys.indexOf(key1);
+        const index2 = camelotKeys.indexOf(key2);
+
+        if (index1 === -1 || index2 === -1) {
+            return false;
+        }
+
+        if (index1 === index2) {
+            return true;
+        }
+
+        if (Math.abs(index1 - index2) === 1 || Math.abs(index1 - index2) === 11) {
+            return true;
+        }
+
+        if (key1.slice(0, -1) === key2.slice(0, -1) && key1.slice(-1) !== key2.slice(-1)) {
+            return true;
+        }
+
+        return false;
+    }
+
+    // Check for harmonic compatibility between any pair of keys
+    for (const key1 of keys1) {
+        for (const key2 of keys2) {
+            if (areKeysHarmonicallyCompatible(key1, key2)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 // Function to shuffle an array
 function shuffleArray(array) {
     for (let i = array.length - 1; i > 0; i--) {
@@ -84,7 +153,7 @@ function shuffleArray(array) {
 }
 
 // Function to create the DJ set
-async function createDjSet(tags, ionMs, energyOption) {
+async function createDjSet(tags, durationMs, energyOption, harmonicOption) {
     let allTracks = [];
 
     for (const tag of tags) {
@@ -113,7 +182,7 @@ async function createDjSet(tags, ionMs, energyOption) {
         id: track.id,
         name: track.name,
         artist: track.artists[0].name,
-        ion_ms: track.ion_ms,
+        duration_ms: track.duration_ms,
         ...(audioFeatures[index] || {})
     }));
 
@@ -124,35 +193,49 @@ async function createDjSet(tags, ionMs, energyOption) {
         trackInfo = shuffleArray(trackInfo);
     }
 
+    // Enable Harmonic Mixing if (harmonicOption.checked)
+
+
+
     let playlist = [];
-    let currention = 0;
+    let currentDuration = 0;
     let lastBPM = null;
+    let lastKey = null;
 
     for (const track of trackInfo) {
-        if (currention + track.ion_ms <= ionMs) {
+        if (currentDuration + track.duration_ms <= durationMs) {
             if (lastBPM === null || areBPMsMixable(lastBPM, track.tempo)) {
-                playlist.push(track);
-                currention += track.ion_ms;
-                lastBPM = track.tempo;
+                if (harmonicOption.checked){
+                    if (lastKey === null || arePitchClassesHarmonicallyCompatible(lastKey, track.key)){
+                        playlist.push(track);
+                        currentDuration += track.duration_ms;
+                        lastKey = track.key;
+                    }
+                }
+                else {
+                    playlist.push(track);
+                    currentDuration += track.duration_ms;
+                    lastBPM = track.tempo;
+                }
             }
         } else {
-            // Check if we can adjust the last track to fit the ion
-            const excession = currention + track.ion_ms - ionMs;
-            if (excession < track.ion_ms) {
-                playlist.push({ ...track, ion_ms: track.ion_ms - excession });
-                currention = ionMs;
+            // Check if we can adjust the last track to fit the duration
+            const excessDuration = currentDuration + track.duration_ms - durationMs;
+            if (excessDuration < track.duration_ms) {
+                playlist.push({ ...track, duration_ms: track.duration_ms - excessDuration });
+                currentDuration = durationMs;
                 break;
             }
         }
     }
 
-    // If the playlist is shorter than the desired ion, add more tracks if possible
-    if (currention < ionMs) {
+    // If the playlist is shorter than the desired duration, add more tracks if possible
+    if (currentDuration < durationMs) {
         for (const track of trackInfo) {
-            if (!playlist.includes(track) && currention + track.ion_ms <= ionMs) {
+            if (!playlist.includes(track) && currentDuration + track.duration_ms <= durationMs) {
                 if (lastBPM === null || areBPMsMixable(lastBPM, track.tempo)) {
                     playlist.push(track);
-                    currention += track.ion_ms;
+                    currentDuration += track.duration_ms;
                     lastBPM = track.tempo;
                 }
             }
@@ -169,25 +252,25 @@ async function createDjSet(tags, ionMs, energyOption) {
 // Function to display the playlist
 function displayPlaylist(playlist) {
     const playlistContainer = document.getElementById('playlist-container');
-    playlistContainer.innerHTML = '<h2>Your DJ set:</h2>';
+    playlistContainer.innerHTML = '<legend>Your DJ set:</legend>';
 
     const ul = document.createElement('ul');
-    let totalionMs = 0;
+    let totalDurationMs = 0;
 
     playlist.forEach(track => {
         const li = document.createElement('li');
-        const minutes = Math.floor(track.ion_ms / 60000);
-        const seconds = Math.floor((track.ion_ms % 60000) / 1000);
-        totalionMs += track.ion_ms;
+        const minutes = Math.floor(track.duration_ms / 60000);
+        const seconds = Math.floor((track.duration_ms % 60000) / 1000);
+        totalDurationMs += track.duration_ms;
         li.textContent = `${track.name} by ${track.artist} - BPM: ${track.tempo.toFixed(0)}, Key: ${track.key}, Energy: ${track.energy.toFixed(2)}, Length: ${minutes}:${seconds.toString().padStart(2, '0')}`;
         ul.appendChild(li);
     });
 
     playlistContainer.appendChild(ul);
 
-    // Calculate the total ion
-    const totalMinutes = Math.floor(totalionMs / 60000);
-    const totalSeconds = Math.floor((totalionMs % 60000) / 1000);
+    // Calculate the total duration
+    const totalMinutes = Math.floor(totalDurationMs / 60000);
+    const totalSeconds = Math.floor((totalDurationMs % 60000) / 1000);
 
     // Display the total length of the DJ set
     const totalLength = document.createElement('p');
@@ -270,15 +353,17 @@ document.getElementById('dj-set-form').addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const tags = document.getElementById('tags').value.split(',').map(tag => tag.trim());
-    const ionMs = document.getElementById('duration').value * 60 * 1000;
+    const durationMs = document.getElementById('duration').value * 60 * 1000;
     const energyOption = document.getElementById('energy').value;
+    const harmonicOption = document.getElementById('harmonic');
+
     
     const generateButton = document.getElementById('generate-button');
     generateButton.textContent = 'Loading...';
     generateButton.disabled = true;
 
     try {
-        const playlist = await createDjSet(tags, ionMs, energyOption);
+        const playlist = await createDjSet(tags, durationMs, energyOption, harmonicOption);
         displayPlaylist(playlist);
     } catch (error) {
         console.error('Error creating DJ set:', error);

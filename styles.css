@@ -4,6 +4,6 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    /* background: url('your-background-image.jpg') no-repeat center center fixed; */
-    background-size: cover;
+    background: url('https://upload.wikimedia.org/wikipedia/uk/archive/7/7d/20131127215829%21Bliss.png') no-repeat center center fixed;
+    background-size: contain;
 }

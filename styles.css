@@ -4,6 +4,28 @@ body {
     align-items: center;
     height: 100vh;
     margin: 0;
-    background: url('https://upload.wikimedia.org/wikipedia/uk/archive/7/7d/20131127215829%21Bliss.png') no-repeat center center fixed;
-    background-size: contain;
+    background-color: #64A2D8;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Firefox */
+input[type=number],
+input[type=number]:focus {
+  -moz-appearance: textfield;
+  padding: 3px 4px;
+  border: 1px solid #7f9db9;
+  outline: none; /* Remove default outline */
+  background-color: #fff;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  border-radius: 0;
+  height: 21px;
+  line-height: 2;
 }

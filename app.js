@@ -1,7 +1,7 @@
 // Spotify API credentials
 const clientId = '1b977c733d7548bc8d906aa088094e49';
-// const redirectUri = 'https://matchafrappe.com';
-const redirectUri = 'http://localhost:5500'; 
+const redirectUri = 'https://matchafrappe.com';
+// const redirectUri = 'http://localhost:5500'; 
 let accessToken;
 let genreList = []; // Array to hold genre objects from genres.json
 
@@ -35,7 +35,10 @@ function authenticate() {
 
 // Function to search for tracks
 async function searchTracks(query, limit = 50, type = 'track') {
-    const response = await fetch(`https://api.spotify.com/v1/search?q=tag:${encodeURIComponent(query)}&type=${type}&limit=${limit}`, {
+    if (!query.includes(':')) {
+        query = "tag:" + query;
+    }
+    const response = await fetch(`https://api.spotify.com/v1/search?q=${encodeURIComponent(query)}&type=${type}&limit=${limit}`, {
         headers: {
             'Authorization': `Bearer ${accessToken}`
         }
@@ -401,7 +404,7 @@ function decrement() {
 }
 
 // Ensure input value is within bounds on manual input
-document.getElementById("duration").addEventListener("input", function() {
+document.getElementById("duration").addEventListener("change", function() {
     var value = parseInt(this.value, 10);
     var minValue = parseInt(this.min, 10);
     var maxValue = parseInt(this.max, 10);

@@ -1,7 +1,7 @@
 // Spotify API credentials
 const clientId = '1b977c733d7548bc8d906aa088094e49';
-const redirectUri = 'https://matchafrappe.com';
-// const redirectUri = 'http://localhost:5500'; 
+// const redirectUri = 'https://matchafrappe.com';
+const redirectUri = 'http://localhost:5500'; 
 let accessToken;
 let genreList = []; // Array to hold genre objects from genres.json
 
@@ -78,8 +78,6 @@ function areBPMsMixable(bpm1, bpm2) {
     return acceptableRatios.some(r => Math.abs(ratio - r) < 0.02);
 }
 
-
-// Define a mapping from pitch classes to Camelot notation
 const pitchClassToCamelot = {
     0: ["8B", "5A"],  // C major, A minor
     1: ["3B", "12A"], // C♯ major, B♭ minor
@@ -95,57 +93,44 @@ const pitchClassToCamelot = {
     11: ["1B", "10A"] // B major, G♯ minor
 };
 
-// Function to check if two pitch classes are harmonically compatible
-function arePitchClassesHarmonicallyCompatible(pitch1, pitch2) {
-    // Get the Camelot keys for each pitch class
-    const keys1 = pitchClassToCamelot[pitch1];
-    const keys2 = pitchClassToCamelot[pitch2];
+function getCamelotNotation(key, mode) {
+    // Convert Spotify key and mode to pitch class
+    const pitchClass = key;  // Spotify's key is already in the range of 0-11
+    const isMajor = mode === 1;  // Spotify's mode: 1 = major, 0 = minor
 
-    // If either pitch class is not found, return false
-    if (!keys1 || !keys2) {
-        return false;
-    }
-
-    // Function to check harmonic compatibility for a given Camelot key pair
-    function areKeysHarmonicallyCompatible(key1, key2) {
-        const camelotKeys = [
-            "1A", "2A", "3A", "4A", "5A", "6A", "7A", "8A", "9A", "10A", "11A", "12A",
-            "1B", "2B", "3B", "4B", "5B", "6B", "7B", "8B", "9B", "10B", "11B", "12B"
-        ];
-        
-        const index1 = camelotKeys.indexOf(key1);
-        const index2 = camelotKeys.indexOf(key2);
-
-        if (index1 === -1 || index2 === -1) {
-            return false;
-        }
-
-        if (index1 === index2) {
-            return true;
-        }
-
-        if (Math.abs(index1 - index2) === 1 || Math.abs(index1 - index2) === 11) {
-            return true;
-        }
-
-        if (key1.slice(0, -1) === key2.slice(0, -1) && key1.slice(-1) !== key2.slice(-1)) {
-            return true;
-        }
-
-        return false;
-    }
-
-    // Check for harmonic compatibility between any pair of keys
-    for (const key1 of keys1) {
-        for (const key2 of keys2) {
-            if (areKeysHarmonicallyCompatible(key1, key2)) {
-                return true;
-            }
-        }
-    }
-
-    return false;
+    // Return the appropriate Camelot notation
+    return isMajor ? pitchClassToCamelot[pitchClass][0] : pitchClassToCamelot[pitchClass][1];
 }
+
+function areCamelotNotationsMixable(camelot1, camelot2) {
+    const camelotMap = {
+        '1A': 0, '1B': 1, '2A': 2, '2B': 3, '3A': 4, '3B': 5,
+        '4A': 6, '4B': 7, '5A': 8, '5B': 9, '6A': 10, '6B': 11,
+        '7A': 12, '7B': 13, '8A': 14, '8B': 15, '9A': 16, '9B': 17,
+        '10A': 18, '10B': 19, '11A': 20, '11B': 21, '12A': 22, '12B': 23
+    };
+
+    const adjacentKeys = [1, 11]; // Keys are adjacent or a perfect fifth apart on the Camelot wheel
+
+    function getCamelotIndex(camelot) {
+        return camelotMap[camelot];
+    }
+
+    function areAdjacentOrFifthApart(index1, index2) {
+        const diff = Math.abs(index1 - index2);
+        return adjacentKeys.includes(diff) || diff === 6; // 6 is a perfect fifth
+    }
+
+    const index1 = getCamelotIndex(camelot1);
+    const index2 = getCamelotIndex(camelot2);
+
+    if (index1 === undefined || index2 === undefined) {
+        throw new Error("Invalid Camelot notation");
+    }
+
+    return areAdjacentOrFifthApart(index1, index2);
+}
+
 
 // Function to shuffle an array
 function shuffleArray(array) {
@@ -201,18 +186,17 @@ async function createDjSet(tags, durationMs, energyOption, harmonicOption) {
     let playlist = [];
     let currentDuration = 0;
     let lastBPM = null;
-    let lastKey = null;
+    let lastCamelot = null;
 
     for (const track of trackInfo) {
         if (currentDuration + track.duration_ms <= durationMs) {
             if (lastBPM === null || areBPMsMixable(lastBPM, track.tempo)) {
                 if (harmonicOption.checked){
-                    if (lastKey === null || arePitchClassesHarmonicallyCompatible(lastKey, track.key)){
+                    if (lastCamelot === null || areCamelotNotationsMixable(lastCamelot,getCamelotNotation(track.key,track.mode))){
                         if (!playlist.includes(track)) {
-                            console.log("Adding harmonically matched track");
                             playlist.push(track);
                             currentDuration += track.duration_ms;
-                            lastKey = track.key;
+                            lastCamelot = getCamelotNotation(track.key,track.mode);
                             lastBPM = track.tempo;
                         }
                     }
@@ -257,7 +241,7 @@ function displayPlaylist(playlist) {
         const minutes = Math.floor(track.duration_ms / 60000);
         const seconds = Math.floor((track.duration_ms % 60000) / 1000);
         totalDurationMs += track.duration_ms;
-        li.textContent = `${track.name} by ${track.artist} - BPM: ${track.tempo.toFixed(0)}, Key: ${track.key}, Energy: ${track.energy.toFixed(2)}, Length: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+        li.textContent = `${track.name} by ${track.artist} - BPM: ${track.tempo.toFixed(0)}, Camelot: ${getCamelotNotation(track.key,track.mode)}, Energy: ${track.energy.toFixed(2)}, Length: ${minutes}:${seconds.toString().padStart(2, '0')}`;
         ul.appendChild(li);
     });
 

@@ -1,6 +1,7 @@
-# Matcha Frappe
-An application used to generate BPM-aware Spotify playlists for mixing based on energy level.
+# DJ Set Playlist Generator
 
-For downloading Spotify playlists, I recommend using the SpotDL library: https://github.com/spotDL/spotify-downloader
+Planning to DJ at a party with a specific style or theme? Or just unsure if you can truly express yourself with the music at your next gig? This app helps you curate the perfect playlist for your upcoming DJ set by using tags, BPM matching, Energy level and Camelot matching.
 
-The application is live on https://matchafrappe.com
+The app creates a Spotify playlist and adds it to your account. For downloading Spotify playlists, I recommend using the SpotDL library: https://github.com/spotDL/spotify-downloader
+
+The application is live here: https://xaymup.me/djset-generator

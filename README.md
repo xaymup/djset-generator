@@ -6,6 +6,6 @@ Planning to DJ at a party with a specific style or theme? Or just unsure if you 
 
 The app creates a Spotify playlist and adds it to your account. For downloading Spotify playlists, I recommend using the SpotDL library: https://github.com/spotDL/spotify-downloader
 
-You can only use this tool if your Spotify email is added to the users list. Due to Spotify's development API limitation, I need to invite you to use this app. It takes them 6 months on average to review an application.
+You can only use this tool if your Spotify email is added to the users list. Due to Spotify's development API limitation, I need to invite you to use this app. It takes them 6 months on average to review an application. Feel free to shoot me a message to add you hi@xaymup.me or fork this repo and use your API key. 
 
 The application is live here: https://xaymup.me/djset-generator

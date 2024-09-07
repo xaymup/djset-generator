@@ -295,7 +295,7 @@ async function createPlaylist(userId, name) {
         },
         body: JSON.stringify({
             name: name,
-            description: "Generated using matchafrappe.com",
+            description: "Generated using xaymup.me/djset-generator",
             public: false
         })
     });
